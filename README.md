@@ -17,7 +17,7 @@ Crypto Messenger turns that idea into a tiny interactive demo. The glowing inter
 - Provides controls for passphrase-based key setup, salt, initialization vector (IV), HMAC verification, key size, and cipher mode.
 - Shows a password-strength estimate and a few visual statistics.
 
-The output is a text block containing the encrypted message and the information the page needs for decryption. Share that block separately from the passphrase.
+The output is a text block containing the encrypted message and some decryption data. The selected cipher mode is not saved in that block, so choose the same mode manually when decrypting. Share the block separately from the passphrase.
 
 ## Run it on your computer
 
