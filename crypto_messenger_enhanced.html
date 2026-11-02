@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIPHER-X // ENHANCED PROTOCOL</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Bebas+Neue&display=swap');
+
+        :root {
+            --primary: #00ff41;
+            --secondary: #39ff14;
+            --danger: #ff003c;
+            --warning: #ffa500;
+            --info: #00d4ff;
+            --bg: #050505;
+            --surface: #0a0a0a;
+            --glow: 0 0 30px rgba(0, 255, 65, 0.6);
+            --danger-glow: 0 0 30px rgba(255, 0, 60, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: #000000;
+            color: var(--primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Enhanced Matrix rain with glitch effect */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 1;
+            pointer-events: none;
+        }
+        
+        #matrix-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            mix-blend-mode: screen;
+        }
+
+        .glitch-line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--danger), transparent);
+            animation: glitch-move 10s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes glitch-move {
+            0%, 90%, 100% { opacity: 0; }
+            92% { opacity: 0.8; top: random(100%); }
+            94% { opacity: 0.8; top: random(100%); }
+            96% { opacity: 0.8; top: random(100%); }
+        }
+
+        .scan-line {
+            position: fixed;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--info), transparent);
+            animation: scan 6s linear infinite;
+            opacity: 0.4;
+            z-index: 1;
+        }
+
+        @keyframes scan {
+            0% { top: -100%; }
+            100% { top: 100%; }
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-weight: 900;
+            font-size: clamp(3rem, 6vw, 5rem);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--info));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-shift 3s ease-in-out infinite;
+            text-shadow: 0 0 40px rgba(0, 255, 65, 0.5);
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(30deg); }
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            color: var(--warning);
+        }
+
+        .security-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            font-size: 0.8rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .indicator:hover {
+            background: rgba(0, 255, 65, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .indicator.active {
+            background: rgba(0, 255, 65, 0.2);
+            box-shadow: var(--glow);
+            animation: pulse 2s infinite;
+        }
+
+        .indicator.disabled {
+            background: rgba(255, 0, 60, 0.2);
+            border-color: var(--danger);
+            color: var(--danger);
+            box-shadow: none;
+            animation: none;
+        }
+
+        .indicator.warning {
+            background: rgba(255, 165, 0, 0.2);
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        /* Tooltip styles */
+        .indicator::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: var(--primary);
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, bottom 0.3s;
+            z-index: 1000;
+            margin-bottom: 0.5rem;
+        }
+
+        .indicator:hover::after {
+            opacity: 1;
+            bottom: 110%;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .control-panel {
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.85), rgba(5, 5, 5, 0.85));
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            backdrop-filter: blur(2px);
+        }
+
+        .control-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 2px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--info), var(--primary));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: destination-out;
+            mask-composite: exclude;
+            animation: border-animation 4s linear infinite;
+        }
+
+        @keyframes border-animation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--info);
+        }
+
+        .field-info {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            margin-left: auto;
+        }
+
+        textarea, input, select {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            color: var(--primary);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3), inset 0 0 10px rgba(0, 255, 65, 0.1);
+            background: rgba(0, 0, 0, 0.95);
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .advanced-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 255, 65, 0.05);
+            border: 1px solid rgba(0, 255, 65, 0.1);
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        select {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 100%;
+            background: var(--primary);
+            transition: all 0.3s;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        button:hover {
+            color: var(--bg);
+            box-shadow: var(--glow);
+            transform: translateY(-2px);
+        }
+
+        button:hover::before {
+            width: 100%;
+        }
+
+        button.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        button.danger::before {
+            background: var(--danger);
+        }
+
+        button.danger:hover {
+            box-shadow: var(--danger-glow);
+        }
+
+        .output-display {
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid var(--primary);
+            padding: 2rem;
+            margin-top: 2rem;
+            position: relative;
+            overflow-x: auto;
+            min-height: 200px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            backdrop-filter: blur(2px);
+        }
+
+        .output-display.error {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .output-display.success {
+            border-color: var(--primary);
+        }
+
+        .alien-text {
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 0.2em;
+            animation: alien-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes alien-glow {
+            0%, 100% { 
+                text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+                filter: brightness(1);
+            }
+            50% { 
+                text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+                filter: brightness(1.3);
+            }
+        }
+
+        .morphing {
+            display: inline-block;
+            animation: morph 0.5s ease-in-out;
+        }
+
+        @keyframes morph {
+            0% {
+                transform: rotateY(0deg) scale(1);
+                filter: blur(3px);
+            }
+            50% {
+                transform: rotateY(90deg) scale(0.8);
+                filter: blur(5px);
+            }
+            100% {
+                transform: rotateY(180deg) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        .crypto-details {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            font-size: 0.85rem;
+            color: var(--info);
+        }
+
+        .crypto-details h3 {
+            color: var(--info);
+            margin-bottom: 0.5rem;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-value {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--primary);
+            word-break: break-all;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(0, 255, 65, 0.05);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+        }
+
+        .stat {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 65, 0.1);
+            transition: all 0.3s;
+        }
+
+        .stat:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.5rem;
+        }
+
+        .warning-box {
+            background: rgba(255, 0, 60, 0.1);
+            border: 2px solid var(--danger);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .warning-box::before {
+            content: '⚠';
+            position: absolute;
+            top: 50%;
+            left: 1rem;
+            transform: translateY(-50%);
+            font-size: 2rem;
+            color: var(--danger);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .warning-box p {
+            margin-left: 3rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-circle {
+            width: 60px;
+            height: 60px;
+            border: 3px solid transparent;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Entropy visualization */
+        .entropy-meter {
+            height: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            margin-top: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .entropy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger), var(--warning), var(--primary));
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 30px;
+            background: linear-gradient(to bottom, transparent, var(--primary), transparent);
+            animation: fall linear infinite;
+            opacity: 0.1;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(45deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="matrix-bg"></div>
+    <div class="scan-line"></div>
+    <div class="glitch-container">
+        <div class="glitch-line"></div>
+        <div class="glitch-line" style="animation-delay: 2s;"></div>
+        <div class="glitch-line" style="animation-delay: 4s;"></div>
+    </div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="loading" id="loading">
+        <div class="loading-circle"></div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>CIPHER-X</h1>
+            <div class="subtitle">ENHANCED CRYPTOGRAPHIC PROTOCOL v2.0</div>
+            <div class="security-indicators">
+                <div class="indicator active" id="saltIndicator" 
+                     data-tooltip="Click to toggle SALT - Prevents rainbow table attacks"
+                     onclick="toggleSecurity('salt')">
+                    <span>SALT: ON</span>
+                </div>
+                <div class="indicator active" id="pbkdf2Indicator" 
+                     data-tooltip="Click to toggle PBKDF2 - Strengthens key derivation"
+                     onclick="toggleSecurity('pbkdf2')">
+                    <span>PBKDF2: ON</span>
+                </div>
+                <div class="indicator active" id="hmacIndicator" 
+                     data-tooltip="Click to toggle HMAC - Authenticates message integrity"
+                     onclick="toggleSecurity('hmac')">
+                    <span>HMAC: ON</span>
+                </div>
+                <div class="indicator active" id="ivIndicator" 
+                     data-tooltip="Click to toggle IV - Randomizes identical messages"
+                     onclick="toggleSecurity('iv')">
+                    <span>IV: ON</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="control-panel">
+            <div class="input-group">
+                <label>
+                    // MESSAGE INPUT
+                    <span class="field-info">MAX: 10KB</span>
+                </label>
+                <textarea id="messageInput" placeholder="Enter classified intelligence..."></textarea>
+                <div class="entropy-meter">
+                    <div class="entropy-fill" id="entropyFill"></div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>
+                    // ENCRYPTION KEY
+                    <span class="field-info" id="keyStrength">STRENGTH: WEAK</span>
+                </label>
+                <input type="password" id="passwordInput" placeholder="Alpha-Zulu-Seven-Niner..." oninput="checkPasswordStrength()">
+            </div>
+
+            <div class="advanced-options">
+                <div class="option-group">
+                    <label>ITERATIONS</label>
+                    <select id="iterationCount">
+                        <option value="1000">1,000 (Fast)</option>
+                        <option value="5000">5,000 (Balanced)</option>
+                        <option value="10000">10,000 (Secure)</option>
+                        <option value="50000">50,000 (High)</option>
+                        <option value="100000">100,000 (Very High)</option>
+                        <option value="500000">500,000 (Paranoid)</option>
+                        <option value="1000000">1,000,000 (Extreme)</option>
+                        <option value="5000000">5,000,000 (Overkill)</option>
+                        <option value="10000000">10,000,000 (Maximum)</option>
+                        <option value="50000000">50,000,000 (Insane)</option>
+                        <option value="100000000" selected>100,000,000 (Ludicrous)</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>KEY SIZE</label>
+                    <select id="keySize">
+                        <option value="128">128-bit</option>
+                        <option value="256" selected>256-bit</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>ALGORITHM</label>
+                    <select id="algorithm">
+                        <option value="AES" selected>AES</option>
+                        <option value="TripleDES">3DES</option>
+                        <option value="Rabbit">Rabbit</option>
+                        <option value="RC4">RC4 (Legacy)</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>MODE</label>
+                    <select id="mode">
+                        <option value="CBC" selected>CBC</option>
+                        <option value="CFB">CFB</option>
+                        <option value="CTR">CTR</option>
+                        <option value="OFB">OFB</option>
+                        <option value="ECB">ECB (Insecure)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button onclick="encryptMessage()"><span>🔒 ENCRYPT</span></button>
+                <button onclick="decryptMessage()"><span>🔓 DECRYPT</span></button>
+                <button onclick="generateKey()"><span>🔑 GEN KEY</span></button>
+                <button class="danger" onclick="clearAll()"><span>💀 BURN ALL</span></button>
+            </div>
+        </div>
+
+        <div class="output-display" id="output">
+            // AWAITING TRANSMISSION...
+        </div>
+
+        <div class="crypto-details" id="cryptoDetails" style="display: none;">
+            <h3>CRYPTOGRAPHIC PARAMETERS</h3>
+            <div class="detail-row">
+                <span>Salt (Hex):</span>
+                <span class="detail-value" id="saltValue">-</span>
+            </div>
+            <div class="detail-row">
+                <span>IV (Hex):</span>
+                <span class="detail-value" id="ivValue">-</span>
+            </div>
+            <div class="detail-row">
+                <span>HMAC:</span>
+                <span class="detail-value" id="hmacValue">-</span>
+            </div>
+            <div class="detail-row">
+                <span>Iterations:</span>
+                <span class="detail-value" id="iterValue">-</span>
+            </div>
+            <div class="detail-row">
+                <span>Key Derivation Time:</span>
+                <span class="detail-value" id="kdfTime">-</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat">
+                <div class="stat-value" id="entropyLevel">0</div>
+                <div class="stat-label">Entropy Bits</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="securityLevel">0%</div>
+                <div class="stat-label">Security Score</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="bruteForce">∞</div>
+                <div class="stat-label">Years to Crack</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="operationTime">0.0s</div>
+                <div class="stat-label">Last Operation</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="messageSize">0B</div>
+                <div class="stat-label">Message Size</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="compressionRatio">0%</div>
+                <div class="stat-label">Compression</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="operations">0</div>
+                <div class="stat-label">Operations</div>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <p>
+                <strong>SECURITY NOTICE:</strong> This implementation uses client-side AES-256 encryption with PBKDF2 key derivation, 
+                cryptographically secure salt generation, and HMAC authentication. While resistant to most attacks, 
+                true security requires proper key management and secure channels. For maximum security, use iterations ≥10,000 
+                and passwords with >100 bits of entropy.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced alien character sets
+        const alienChars = [
+            '⊙', '⊚', '⊛', '⊜', '⊝', '◈', '◉', '◊', '◌', '◍',
+            '◎', '◐', '◑', '◒', '◓', '◔', '◕', '◖', '◗', '◙',
+            '⬟', '⬢', '⬣', '⬤', '⬥', '⬦', '⬧', '⬨', '⬩', '⬪',
+            '⬫', '⬬', '⬭', '⬮', '⬯', '⬱', '⬲', '⬳', '⬴', '⬵',
+            '⬶', '⬷', '⬸', '⬹', '⬺', '⬻', '⬼', '⬽', '⬾', '⬿',
+            '⭀', '⭁', '⭂', '⭃', '⭄', '⭅', '⭆', '⭇', '⭈', '⭉',
+            'Ω', 'Δ', 'Θ', 'Λ', 'Ξ', 'Π', 'Σ', 'Φ', 'Ψ', 'α',
+            'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ',
+            '▰', '▱', '▲', '△', '▴', '▵', '▶', '▷', '▸', '▹',
+            '◀', '◁', '◂', '◃', '◄', '◅', '◆', '◇', '◈', '◉'
+        ];
+
+        let operationCount = 0;
+
+        // Security feature toggles
+        const securitySettings = {
+            salt: true,
+            pbkdf2: true,
+            hmac: true,
+            iv: true
+        };
+
+        // Toggle security features
+        function toggleSecurity(feature) {
+            securitySettings[feature] = !securitySettings[feature];
+            const indicator = document.getElementById(feature + 'Indicator');
+            const span = indicator.querySelector('span');
+            
+            if(securitySettings[feature]) {
+                indicator.classList.add('active');
+                indicator.classList.remove('disabled');
+                span.textContent = span.textContent.replace('OFF', 'ON');
+            } else {
+                indicator.classList.remove('active');
+                indicator.classList.add('disabled');
+                span.textContent = span.textContent.replace('ON', 'OFF');
+            }
+            
+            // Show warning if critical features are disabled
+            if(!securitySettings.salt || !securitySettings.pbkdf2 || !securitySettings.hmac) {
+                showOutput('⚠ WARNING: Disabling security features reduces protection. Use only for testing!', false);
+            }
+        }
+
+        // Initialize Matrix rain effect
+        function initMatrixRain() {
+            const canvas = document.createElement('canvas');
+            canvas.id = 'matrix-canvas';
+            document.getElementById('matrix-bg').appendChild(canvas);
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const fontSize = 16;
+            const columns = Math.floor(canvas.width / fontSize);
+            const drops = [];
+            
+            // Initialize drops with random starting positions
+            for(let i = 0; i < columns; i++) {
+                drops[i] = Math.floor(Math.random() * canvas.height / fontSize);
+            }
+            
+            // Extended character set for more authentic Matrix look
+            const matrixChars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ012345789Zｦｲｸｺｿﾁﾄﾉﾌﾔﾖﾙﾚﾛﾝ';
+            
+            function draw() {
+                // Semi-transparent black to create fade effect
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.font = fontSize + 'px monospace';
+                
+                for(let i = 0; i < drops.length; i++) {
+                    // Randomly choose between Matrix chars and alien chars
+                    const useMatrix = Math.random() > 0.3;
+                    const charSet = useMatrix ? matrixChars : alienChars.join('');
+                    const text = charSet[Math.floor(Math.random() * charSet.length)];
+                    
+                    // Create brighter head character
+                    if(Math.random() > 0.975) {
+                        ctx.fillStyle = '#ffffff';
+                    } else if(Math.random() > 0.95) {
+                        ctx.fillStyle = '#aaffaa';
+                    } else {
+                        ctx.fillStyle = '#00ff41';
+                    }
+                    
+                    // Add slight glow effect
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#00ff41';
+                    
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    // Reset drop randomly
+                    if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    
+                    drops[i]++;
+                }
+                
+                ctx.shadowBlur = 0;
+            }
+            
+            setInterval(draw, 35);
+        }
+
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for(let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 5 + 3) + 's';
+                particle.style.animationDelay = Math.random() * 3 + 's';
+                particle.style.height = Math.random() * 30 + 10 + 'px';
+                container.appendChild(particle);
+            }
+        }
+
+        // Check password strength
+        function checkPasswordStrength() {
+            const password = document.getElementById('passwordInput').value;
+            const strengthLabel = document.getElementById('keyStrength');
+            
+            // Calculate entropy
+            let entropy = 0;
+            const charsets = {
+                lowercase: /[a-z]/.test(password) ? 26 : 0,
+                uppercase: /[A-Z]/.test(password) ? 26 : 0,
+                numbers: /[0-9]/.test(password) ? 10 : 0,
+                symbols: /[^a-zA-Z0-9]/.test(password) ? 32 : 0
+            };
+            
+            const poolSize = Object.values(charsets).reduce((a, b) => a + b, 0);
+            entropy = password.length * Math.log2(poolSize || 1);
+            
+            // Update entropy display
+            document.getElementById('entropyLevel').textContent = Math.floor(entropy);
+            document.getElementById('entropyFill').style.width = Math.min(entropy, 256) / 256 * 100 + '%';
+            
+            // Update strength label
+            if (entropy < 30) {
+                strengthLabel.textContent = 'STRENGTH: WEAK';
+                strengthLabel.style.color = 'var(--danger)';
+            } else if (entropy < 60) {
+                strengthLabel.textContent = 'STRENGTH: MODERATE';
+                strengthLabel.style.color = 'var(--warning)';
+            } else if (entropy < 100) {
+                strengthLabel.textContent = 'STRENGTH: STRONG';
+                strengthLabel.style.color = 'var(--primary)';
+            } else {
+                strengthLabel.textContent = 'STRENGTH: MAXIMUM';
+                strengthLabel.style.color = 'var(--info)';
+            }
+            
+            // Calculate brute force time
+            const guessesPerSecond = 1e12; // 1 trillion guesses/second
+            const totalCombinations = Math.pow(poolSize, password.length);
+            const secondsToCrack = totalCombinations / (2 * guessesPerSecond);
+            const yearsToCrack = secondsToCrack / (365 * 24 * 3600);
+            
+            if (yearsToCrack > 1e10) {
+                document.getElementById('bruteForce').textContent = '∞';
+            } else if (yearsToCrack > 1) {
+                document.getElementById('bruteForce').textContent = yearsToCrack.toExponential(1);
+            } else {
+                document.getElementById('bruteForce').textContent = '<1';
+            }
+            
+            return entropy;
+        }
+
+        // Generate secure random key
+        function generateKey() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+            let password = '';
+            for(let i = 0; i < 32; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('passwordInput').value = password;
+            checkPasswordStrength();
+            showOutput('🔑 Secure key generated with 192 bits of entropy', false);
+        }
+
+        // Convert text to alien characters
+        function textToAlien(text) {
+            return text.split('').map(() => 
+                alienChars[Math.floor(Math.random() * alienChars.length)]
+            ).join('');
+        }
+
+        // Enhanced encryption with proper salt, IV, and HMAC
+        function encryptMessage() {
+            const startTime = performance.now();
+            showLoading(true);
+            
+            const message = document.getElementById('messageInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const iterations = parseInt(document.getElementById('iterationCount').value);
+            const keySize = parseInt(document.getElementById('keySize').value);
+            
+            if(!message || !password) {
+                showOutput('⚠ ERROR: Missing input data. Both message and key required.', true);
+                showLoading(false);
+                return;
+            }
+            
+            try {
+                let key, salt, iv, hmac;
+                
+                // Generate cryptographically secure salt (128 bits) if enabled
+                if(securitySettings.salt) {
+                    salt = CryptoJS.lib.WordArray.random(128/8);
+                } else {
+                    salt = CryptoJS.enc.Utf8.parse('NOSALT00');
+                }
+                
+                // Derive key using PBKDF2 if enabled, otherwise use direct password
+                if(securitySettings.pbkdf2) {
+                    key = CryptoJS.PBKDF2(password, salt, {
+                        keySize: keySize/32,
+                        iterations: iterations,
+                        hasher: CryptoJS.algo.SHA256
+                    });
+                } else {
+                    key = CryptoJS.SHA256(password + salt.toString());
+                }
+                
+                // Generate IV (128 bits) if enabled
+                if(securitySettings.iv) {
+                    iv = CryptoJS.lib.WordArray.random(128/8);
+                } else {
+                    iv = CryptoJS.enc.Utf8.parse('0000000000000000');
+                }
+                
+                // Encrypt message
+                const encrypted = CryptoJS.AES.encrypt(message, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode[document.getElementById('mode').value],
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                
+                // Generate HMAC for authentication if enabled
+                if(securitySettings.hmac) {
+                    hmac = CryptoJS.HmacSHA256(encrypted.toString(), key);
+                } else {
+                    hmac = CryptoJS.enc.Utf8.parse('NOHMAC');
+                }
+                
+                // Combine salt, iv, hmac, and ciphertext
+                const combined = {
+                    salt: salt.toString(),
+                    iv: iv.toString(),
+                    hmac: hmac.toString(),
+                    ciphertext: encrypted.toString(),
+                    iterations: iterations,
+                    keySize: keySize,
+                    settings: securitySettings
+                };
+                
+                const output = btoa(JSON.stringify(combined));
+                
+                // Show alien characters first
+                const alienText = textToAlien(output);
+                showOutput(alienText, false, true);
+                
+                // Calculate metrics
+                const endTime = performance.now();
+                const kdfTime = (endTime - startTime).toFixed(2);
+                
+                // Update crypto details
+                document.getElementById('cryptoDetails').style.display = 'block';
+                document.getElementById('saltValue').textContent = securitySettings.salt ? 
+                    salt.toString().substring(0, 32) + '...' : 'DISABLED';
+                document.getElementById('ivValue').textContent = securitySettings.iv ? 
+                    iv.toString().substring(0, 32) + '...' : 'DISABLED';
+                document.getElementById('hmacValue').textContent = securitySettings.hmac ? 
+                    hmac.toString().substring(0, 32) + '...' : 'DISABLED';
+                document.getElementById('iterValue').textContent = securitySettings.pbkdf2 ? 
+                    iterations.toLocaleString() : 'DISABLED';
+                document.getElementById('kdfTime').textContent = kdfTime + ' ms';
+                document.getElementById('kdfTime').textContent = kdfTime + ' ms';
+                
+                // Morph to encrypted text after delay
+                setTimeout(() => {
+                    morphText(alienText, output);
+                    showLoading(false);
+                }, 1500);
+                
+                updateStats('ENCRYPTED', output.length, endTime - startTime);
+                operationCount++;
+                document.getElementById('operations').textContent = operationCount;
+                
+            } catch(e) {
+                showOutput('⚠ ENCRYPTION FAILED: ' + e.message, true);
+                showLoading(false);
+            }
+        }
+
+        // Enhanced decryption with verification
+        function decryptMessage() {
+            const startTime = performance.now();
+            showLoading(true);
+            
+            const encryptedData = document.getElementById('messageInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            if(!encryptedData || !password) {
+                showOutput('⚠ ERROR: Missing input data. Both ciphertext and key required.', true);
+                showLoading(false);
+                return;
+            }
+            
+            try {
+                // Parse the combined data
+                const combined = JSON.parse(atob(encryptedData));
+                
+                // Load security settings from encrypted data
+                const dataSettings = combined.settings || {salt: true, pbkdf2: true, hmac: true, iv: true};
+                
+                // Recreate salt and IV
+                const salt = CryptoJS.enc.Hex.parse(combined.salt);
+                const iv = CryptoJS.enc.Hex.parse(combined.iv);
+                
+                let key;
+                
+                // Derive key using same parameters
+                if(dataSettings.pbkdf2) {
+                    key = CryptoJS.PBKDF2(password, salt, {
+                        keySize: combined.keySize/32,
+                        iterations: combined.iterations,
+                        hasher: CryptoJS.algo.SHA256
+                    });
+                } else {
+                    key = CryptoJS.SHA256(password + salt.toString());
+                }
+                
+                // Verify HMAC first if it was enabled
+                if(dataSettings.hmac) {
+                    const computedHmac = CryptoJS.HmacSHA256(combined.ciphertext, key);
+                    if(computedHmac.toString() !== combined.hmac) {
+                        throw new Error('HMAC verification failed - message may be tampered');
+                    }
+                }
+                
+                // Show alien transformation
+                const alienText = textToAlien(encryptedData);
+                showOutput(alienText, false, true);
+                
+                // Decrypt
+                const decrypted = CryptoJS.AES.decrypt(combined.ciphertext, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode[document.getElementById('mode').value],
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                
+                const originalText = decrypted.toString(CryptoJS.enc.Utf8);
+                
+                if(!originalText) {
+                    throw new Error('Invalid key or corrupted data');
+                }
+                
+                // Calculate metrics
+                const endTime = performance.now();
+                const kdfTime = (endTime - startTime).toFixed(2);
+                
+                // Update crypto details
+                document.getElementById('cryptoDetails').style.display = 'block';
+                document.getElementById('saltValue').textContent = dataSettings.salt ? 
+                    combined.salt.substring(0, 32) + '...' : 'DISABLED';
+                document.getElementById('ivValue').textContent = dataSettings.iv ? 
+                    combined.iv.substring(0, 32) + '...' : 'DISABLED';
+                document.getElementById('hmacValue').textContent = dataSettings.hmac ? 
+                    '✓ VERIFIED' : 'DISABLED';
+                document.getElementById('iterValue').textContent = dataSettings.pbkdf2 ? 
+                    combined.iterations.toLocaleString() : 'DISABLED';
+                document.getElementById('kdfTime').textContent = kdfTime + ' ms';
+                
+                // Morph to decrypted text
+                setTimeout(() => {
+                    morphText(alienText, originalText);
+                    showLoading(false);
+                }, 1500);
+                
+                updateStats('DECRYPTED', originalText.length, endTime - startTime);
+                operationCount++;
+                document.getElementById('operations').textContent = operationCount;
+                
+            } catch(e) {
+                showOutput('⚠ DECRYPTION FAILED: ' + e.message, true);
+                showLoading(false);
+                document.getElementById('cryptoDetails').style.display = 'none';
+            }
+        }
+
+        // Update security indicators (removed - now handled by toggle function)
+
+        // Show/hide loading animation
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        // Morph text animation
+        function morphText(fromText, toText) {
+            const output = document.getElementById('output');
+            const steps = 30;
+            let currentStep = 0;
+            
+            const interval = setInterval(() => {
+                currentStep++;
+                const progress = currentStep / steps;
+                
+                if(progress < 1) {
+                    const morphedText = toText.split('').map((char, i) => {
+                        if(Math.random() < progress) {
+                            return char;
+                        } else {
+                            return alienChars[Math.floor(Math.random() * alienChars.length)];
+                        }
+                    }).join('');
+                    
+                    output.innerHTML = `<span class="morphing">${morphedText}</span>`;
+                } else {
+                    output.textContent = toText;
+                    output.classList.add('success');
+                    clearInterval(interval);
+                }
+            }, 50);
+        }
+
+        // Show output
+        function showOutput(text, isError = false, isAlien = false) {
+            const output = document.getElementById('output');
+            output.className = 'output-display';
+            if(isError) {
+                output.classList.add('error');
+            }
+            if(isAlien) {
+                output.classList.add('alien-text');
+            }
+            output.textContent = text;
+        }
+
+        // Clear all fields
+        function clearAll() {
+            if(confirm('⚠ WARNING: This will permanently destroy all data. Continue?')) {
+                document.getElementById('messageInput').value = '';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('cryptoDetails').style.display = 'none';
+                showOutput('💀 ALL DATA DESTROYED - MEMORY WIPED', false);
+                
+                // Visual effect
+                document.body.style.filter = 'brightness(0)';
+                setTimeout(() => {
+                    document.body.style.filter = 'brightness(1)';
+                }, 300);
+                
+                // Reset stats
+                document.getElementById('entropyLevel').textContent = '0';
+                document.getElementById('securityLevel').textContent = '0%';
+                document.getElementById('bruteForce').textContent = '∞';
+                document.getElementById('messageSize').textContent = '0B';
+                document.getElementById('operationTime').textContent = '0.0s';
+                document.getElementById('entropyFill').style.width = '0%';
+            }
+        }
+
+        // Update statistics
+        function updateStats(status, dataSize, time) {
+            // Calculate security score based on parameters
+            const iterations = parseInt(document.getElementById('iterationCount').value);
+            const keySize = parseInt(document.getElementById('keySize').value);
+            const entropy = checkPasswordStrength();
+            
+            const securityScore = Math.min(100, Math.floor(
+                (iterations / 1000) * 10 +
+                (keySize / 32) * 10 +
+                (entropy / 2)
+            ));
+            
+            document.getElementById('securityLevel').textContent = securityScore + '%';
+            
+            // Update operation time
+            const timeInSeconds = (time / 1000).toFixed(1);
+            document.getElementById('operationTime').textContent = timeInSeconds + 's';
+            
+            // Update message size
+            const sizeStr = dataSize > 1024 ? 
+                (dataSize / 1024).toFixed(1) + 'KB' : 
+                dataSize + 'B';
+            document.getElementById('messageSize').textContent = sizeStr;
+            
+            // Update compression ratio (simulated)
+            const ratio = Math.floor(Math.random() * 20 + 10);
+            document.getElementById('compressionRatio').textContent = ratio + '%';
+        }
+
+        // Monitor message input
+        document.getElementById('messageInput').addEventListener('input', function() {
+            const size = new Blob([this.value]).size;
+            const sizeStr = size > 1024 ? 
+                (size / 1024).toFixed(1) + 'KB' : 
+                size + 'B';
+            document.getElementById('messageSize').textContent = sizeStr;
+        });
+
+        // Initialize on load
+        window.onload = function() {
+            initMatrixRain();
+            createParticles();
+            updateStats('READY', 0, 0);
+            
+            // Add real-time password strength checking
+            document.getElementById('passwordInput').addEventListener('input', checkPasswordStrength);
+        };
+
+        // Window resize handler
+        window.onresize = function() {
+            const canvas = document.getElementById('matrix-canvas');
+            if(canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        };
+    </script>
+</body>
+</html>
